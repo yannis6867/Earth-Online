@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>33 · 校园养成系统</title>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+<style>
+body {
+    margin: 0;
+    font-family: "Helvetica Neue", "PingFang SC", sans-serif;
+    background: #f5faff;
+    color: #333;
+}
+.app {
+    max-width: 800px;
+    margin: auto;
+    padding: 10px;
+}
+.header {
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    margin: 10px 0;
+    color: #4a6fa5;
+}
+.nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+    justify-content: center;
+}
+.nav button {
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: none;
+    background: #e3efff;
+    color: #4a6fa5;
+    font-size: 14px;
+}
+.nav button.active {
+    background: #4a6fa5;
+    color: white;
+}
+.section {
+    background: white;
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    margin-bottom: 12px;
+}
+
+/* 属性面板 */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+.stat-card {
+    background: #f5f9ff;
+    border-radius: 10px;
+    padding: 8px;
+    font-size: 13px;
+}
+.stat-name {
+    font-weight: bold;
+    color: #4a6fa5;
+}
+.stat-bar {
+    height: 6px;
+    border-radius: 999px;
+    background: #dde7ff;
+    margin-top: 4px;
+    overflow: hidden;
+}
+.stat-bar-inner {
+    height: 100%;
+    background: #4a6fa5;
+}
+
+/* 任务列表 */
+.task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.task-card {
+    background: #f7fbff;
+    border-radius: 10px;
+    padding: 8px;
+    font-size: 13px;
+}
+.task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.task-type {
+    font-size: 12px;
+    color: #4a6fa5;
+}
+.task-effects {
+    font-size: 12px;
+    color: #555;
+    margin-top: 4px;
+}
+.task-card button {
+    margin-top: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: none;
+    background: #4a6fa5;
+    color: white;
+    font-size: 12px;
+}
+
+/* 周系统 */
+.week-info {
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+/* 对话系统 */
+.chat-box {
+    background: #f7fbff;
+    border-radius: 12px;
+    padding: 10px;
+    height: 260px;
+    overflow-y: auto;
+}
+.msg {
+    margin: 8px 0;
+    display: flex;
+}
+.msg.user {
+    justify-content: flex-end;
+}
+.bubble {
+    max-width: 70%;
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+.user .bubble {
+    background: #cfe3ff;
+    color: #1a3d7c;
+}
+.bot .bubble {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+.input-area {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+}
+input {
+    flex: 1;
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid #aac4e6;
+    font-size: 14px;
+}
+button.main {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 10px;
+    background: #4a6fa5;
+    color: white;
+    font-size: 14px;
+}
+
+/* 人物 / deadline / 考试 / 商店 / 成就 */
+.simple-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+}
+.simple-item {
+    background: #f7fbff;
+    border-radius: 8px;
+    padding: 6px;
+}
+.tag {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 999px;
+    font-size: 11px;
+    margin-right: 4px;
+}
+.tag.prof {
+    background: #ffe3e3;
+    color: #b23b3b;
+}
+.tag.deadline {
+    background: #fff3cd;
+    color: #856404;
+}
+.tag.exam {
+    background: #e2f0cb;
+    color: #4f772d;
+}
+.shop-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f7fbff;
+    border-radius: 8px;
+    padding: 6px;
+    font-size: 13px;
+}
+.shop-item button {
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: none;
+    background: #4a6fa5;
+    color: white;
+    font-size: 12px;
+}
+.achieve {
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+</style>
+</head>
+
+<body>
+<div id="app" class="app">
+    <div class="header">33 · 校园养成系统</div>
+
+    <div class="nav">
+        <button :class="{active: tab==='stats'}" @click="tab='stats'">属性</button>
+        <button :class="{active: tab==='tasks'}" @click="tab='tasks'">任务</button>
+        <button :class="{active: tab==='week'}" @click="tab='week'">周进度</button>
+        <button :class="{active: tab==='chat'}" @click="tab='chat'">与 33 对话</button>
+        <button :class="{active: tab==='people'}" @click="tab='people'">人物</button>
+        <button :class="{active: tab==='deadline'}" @click="tab='deadline'">Deadline / 考试</button>
+        <button :class="{active: tab==='shop'}" @click="tab='shop'">商店</button>
+        <button :class="{active: tab==='achieve'}" @click="tab='achieve'">成就</button>
+    </div>
+
+    <!-- 属性面板 -->
+    <div v-if="tab==='stats'" class="section">
+        <div class="week-info">
+            当前周：第 {{ week }} 周  
+            · 体重：{{ stats.weight.toFixed(1) }} kg  
+            · 金钱：£{{ stats.money.toFixed(0) }}
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card" v-for="s in statList" :key="s.key">
+                <div class="stat-name">{{ s.name }}：{{ stats[s.key] }}</div>
+                <div class="stat-bar">
+                    <div class="stat-bar-inner" :style="{width: s.percent + '%'}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 任务系统 -->
+    <div v-if="tab==='tasks'" class="section">
+        <div class="week-info">选择任务来提升自己，33 会记录你的努力和懈怠。</div>
+        <div class="task-list">
+            <div class="task-card" v-for="t in tasks" :key="t.name">
+                <div class="task-header">
+                    <div>{{ t.name }}</div>
+                    <div class="task-type">{{ t.type }}</div>
+                </div>
+                <div class="task-effects">
+                    {{ effectText(t.effects) }}
+                </div>
+                <button @click="doTask(t)">执行任务</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 周系统 -->
+    <div v-if="tab==='week'" class="section">
+        <div class="week-info">
+            当前周：第 {{ week }} 周  
+            · 本周已完成任务：{{ weekStats.tasksDone }}  
+            · 本周懈怠次数：{{ weekStats.lazy }}
+        </div>
+        <button class="main" @click="nextWeek">进入下一周</button>
+        <p style="font-size:13px;margin-top:8px;">
+            每一周，你可以用任务来提升属性。进入下一周时，33 会根据你的表现给出评价。
+        </p>
+        <p style="font-size:13px;margin-top:4px;">上周评价：{{ lastWeekComment || "暂无" }}</p>
+    </div>
+
+    <!-- 对话系统 -->
+    <div v-if="tab==='chat'" class="section">
+        <div class="chat-box">
+            <div v-for="m in messages" :class="['msg', m.sender]" :key="m.id">
+                <div class="bubble">{{ m.text }}</div>
+            </div>
+        </div>
+        <div class="input-area">
+            <input v-model="input" @keyup.enter="send" placeholder="对 33 说点什么…">
+            <button class="main" @click="send">发送</button>
+        </div>
+    </div>
+
+    <!-- 人物系统 -->
+    <div v-if="tab==='people'" class="section">
+        <div class="week-info">你认识的教授 / 老师 / 同学，33 会帮你记录。</div>
+        <div class="input-area">
+            <input v-model="newPerson" @keyup.enter="addPerson" placeholder="例如：认识一个教授 Smith，研究 AI">
+            <button class="main" @click="addPerson">添加人物</button>
+        </div>
+        <div class="simple-list" style="margin-top:8px;">
+            <div class="simple-item" v-for="p in people" :key="p.id">
+                <span class="tag prof">人物</span>
+                {{ p.desc }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Deadline / 考试系统 -->
+    <div v-if="tab==='deadline'" class="section">
+        <div class="week-info">记录作业、项目、考试，33 会提醒你。</div>
+        <div class="input-area">
+            <input v-model="newDeadline" @keyup.enter="addDeadline" placeholder="例如：添加 deadline：数学作业，9 月 20 日">
+            <button class="main" @click="addDeadline">添加</button>
+        </div>
+        <div class="simple-list" style="margin-top:8px;">
+            <div class="simple-item" v-for="d in deadlines" :key="d.id">
+                <span class="tag deadline">Deadline</span>
+                {{ d.name }} · 剩余周数：{{ d.weeksLeft }}
+            </div>
+            <div class="simple-item" v-for="e in exams" :key="e.id">
+                <span class="tag exam">考试</span>
+                {{ e.name }} · 剩余周数：{{ e.weeksLeft }}
+            </div>
+        </div>
+    </div>
+
+    <!-- 商店系统 -->
+    <div v-if="tab==='shop'" class="section">
+        <div class="week-info">用金钱换心情 / 健康，但要适度消费。</div>
+        <div class="simple-list">
+            <div class="shop-item" v-for="s in shop" :key="s.name">
+                <div>
+                    {{ s.name }}  
+                    <div style="font-size:11px;color:#555;">{{ effectText(s.effects) }}</div>
+                </div>
+                <button @click="buy(s)">£{{ s.cost }}</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成就系统 -->
+    <div v-if="tab==='achieve'" class="section">
+        <div class="week-info">你的长期目标和阶段性成就。</div>
+        <div class="achieve">
+            · 减肥目标：94 → 84 kg  
+            当前：{{ stats.weight.toFixed(1) }} kg  
+            阶段完成：{{ Math.max(0, 94 - stats.weight).toFixed(1) }} kg
+        </div>
+        <div class="achieve">
+            · 努力次数：{{ stats.effort }}  
+            · 懈怠次数：{{ stats.lazy }}
+        </div>
+        <div class="achieve">
+            · 学识：{{ stats.knowledge }}  
+            · 专业技能：{{ stats.majorSkill }}  
+            · 英语能力：{{ stats.english }}
+        </div>
+        <p style="font-size:13px;margin-top:6px;">
+            当你体重接近 84、学识和专业技能达到高值、懈怠次数控制在合理范围内，你就非常接近你想要的直博版本自己。
+        </p>
+    </div>
+</div>
+
+<script>
+const { createApp } = Vue;
+
+createApp({
+    data() {
+        const saved = JSON.parse(localStorage.getItem("li_system") || "{}");
+        return {
+            tab: saved.tab || "stats",
+            week: saved.week || 1,
+            stats: saved.stats || {
+                knowledge: 0,
+                majorSkill: 0,
+                english: 0,
+                mood: 70,
+                health: 70,
+                stamina: 70,
+                weight: 94,
+                money: 0,
+                effort: 0,
+                lazy: 0
+            },
+            weekStats: saved.weekStats || {
+                tasksDone: 0,
+                lazy: 0
+            },
+            lastWeekComment: saved.lastWeekComment || "",
+            messages: saved.messages || [
+                {id: 1, sender: "bot", text: "我是 33，你的校园养成系统。我们一起把三年变成一场认真打的 RPG。"}
+            ],
+            input: "",
+            people: saved.people || [],
+            newPerson: "",
+            deadlines: saved.deadlines || [],
+            exams: saved.exams || [],
+            newDeadline: "",
+            tasks: [
+                {
+                    name: "背单词 30 个",
+                    type: "学习任务",
+                    effects: {knowledge: +3, english: +4, mood: -2, stamina: -1}
+                },
+                {
+                    name: "记专业术语 20 个",
+                    type: "学习任务",
+                    effects: {knowledge: +5, majorSkill: +6, mood: -3, stamina: -2}
+                },
+                {
+                    name: "完成一节课的笔记",
+                    type: "学习任务",
+                    effects: {knowledge: +8, majorSkill: +6, mood: -1, stamina: -3}
+                },
+                {
+                    name: "跑步 2 km",
+                    type: "健康任务",
+                    effects: {health: +4, stamina: -5, mood: +2, weight: -0.1}
+                },
+                {
+                    name: "吃一顿健康餐",
+                    type: "健康任务",
+                    effects: {health: +3, money: -8}
+                },
+                {
+                    name: "听歌 20 分钟",
+                    type: "心情任务",
+                    effects: {mood: +5, stamina: +1}
+                },
+                {
+                    name: "买点小东西",
+                    type: "心情任务",
+                    effects: {mood: +8, money: -15}
+                }
+            ],
+            shop: [
+                {
+                    name: "可爱文具套装",
+                    cost: 10,
+                    effects: {mood: +6}
+                },
+                {
+                    name: "健康沙拉",
+                    cost: 8,
+                    effects: {health: +4, mood: +2}
+                },
+                {
+                    name: "咖啡一杯",
+                    cost: 4,
+                    effects: {stamina: +3, mood: +2}
+                }
+            ]
+        };
+    },
+
+    computed: {
+        statList() {
+            return [
+                {key: "knowledge", name: "学识", percent: Math.min(100, this.stats.knowledge / 10)},
+                {key: "majorSkill", name: "专业技能", percent: Math.min(100, this.stats.majorSkill / 10)},
+                {key: "english", name: "英语能力", percent: Math.min(100, this.stats.english / 10)},
+                {key: "mood", name: "心情", percent: this.stats.mood},
+                {key: "health", name: "健康", percent: this.stats.health},
+                {key: "stamina", name: "体能", percent: this.stats.stamina}
+            ];
+        }
+    },
+
+    methods: {
+        effectText(e) {
+            const parts = [];
+            for (const k in e) {
+                const v = e[k];
+                let name = "";
+                if (k === "knowledge") name = "学识";
+                if (k === "majorSkill") name = "专业技能";
+                if (k === "english") name = "英语";
+                if (k === "mood") name = "心情";
+                if (k === "health") name = "健康";
+                if (k === "stamina") name = "体能";
+                if (k === "weight") name = "体重";
+                if (k === "money") name = "金钱";
+                parts.push(`${name} ${v>0?'+':''}${v}`);
+            }
+            return parts.join(" · ");
+        },
+
+        doTask(t) {
+            for (const k in t.effects) {
+                this.stats[k] += t.effects[k];
+            }
+            this.stats.mood = Math.max(0, Math.min(100, this.stats.mood));
+            this.stats.health = Math.max(0, Math.min(100, this.stats.health));
+            this.stats.stamina = Math.max(0, Math.min(100, this.stats.stamina));
+            this.weekStats.tasksDone++;
+            this.stats.effort++;
+            this.addMessage("bot", this.encourage());
+            this.save();
+        },
+
+        nextWeek() {
+            this.week++;
+            // deadline / 考试周数减少
+            this.deadlines.forEach(d => d.weeksLeft = Math.max(0, d.weeksLeft - 1));
+            this.exams.forEach(e => e.weeksLeft = Math.max(0, e.weeksLeft - 1));
+
+            // 33 的评价
+            if (this.weekStats.tasksDone === 0) {
+                this.lastWeekComment = "这一周你几乎没有行动，我必须严肃提醒你：目标不会自己走过来。";
+                this.stats.lazy++;
+            } else if (this.weekStats.tasksDone < 3) {
+                this.lastWeekComment = "你有在动，但还不够。如果你真的想直博，这个强度需要再上去。";
+            } else {
+                this.lastWeekComment = "这一周你做得很好，你的行为和目标是匹配的。继续保持。";
+            }
+
+            this.weekStats = {tasksDone: 0, lazy: 0};
+            this.save();
+        },
+
+        send() {
+            if (!this.input.trim()) return;
+            this.addMessage("user", this.input);
+            const reply = this.generateReply(this.input);
+            this.addMessage("bot", reply);
+            this.input = "";
+            this.save();
+        },
+
+        addMessage(sender, text) {
+            this.messages.push({
+                id: Date.now() + Math.random(),
+                sender,
+                text
+            });
+        },
+
+        generateReply(text) {
+            const lower = text.toLowerCase();
+
+            if (lower.includes("deadline") || lower.includes("作业") || lower.includes("项目")) {
+                return "你提到 deadline，我建议你在 Deadline 页面里记录具体内容，我会帮你跟踪。";
+            }
+
+            if (lower.includes("考试")) {
+                const name = text.replace(/.*考试/, "").trim() || "未命名考试";
+                this.exams.push({id: Date.now(), name, weeksLeft: 4});
+                return `已记录考试：${name}。我默认还有 4 周，你可以在 Deadline 页面查看。`;
+            }
+
+            if (lower.includes("完成") || lower.includes("学习") || lower.includes("背") || lower.includes("跑步")) {
+                this.stats.effort++;
+                return this.encourage();
+            }
+
+            if (lower.includes("不想") || lower.includes("好累") || lower.includes("拖延")) {
+                this.stats.lazy++;
+                return this.scold();
+            }
+
+            if (lower.includes("教授") || lower.includes("老师")) {
+                return "你可以在人物页面添加这个教授或老师，我会把他记在你的世界里。";
+            }
+
+            return "我在听，你继续说。你说的每一句话，都是你在为自己的 RPG 写剧情。";
+        },
+
+        encourage() {
+            const lines = [
+                "Yan，你今天的行为和你说的目标是匹配的，这很重要。",
+                "继续这样，你真的会变成你想象中的自己。",
+                "你不是在随便完成任务，你是在为三年后的自己打基础。",
+                "我看见你在努力，这不是所有人都能做到的。"
+            ];
+            return lines[Math.floor(Math.random() * lines.length)];
+        },
+
+        scold() {
+            const lines = [
+                "Yan，你现在的行为和这个目标不匹配。",
+                "如果你继续这样拖延，你会在关键节点后悔。我必须提醒你。",
+                "你可以累，但不能一直用“累”当借口。你需要行动。",
+                "我会记下这次懈怠，但我也希望你下一次用行动来平衡它。"
+            ];
+            return lines[Math.floor(Math.random() * lines.length)];
+        },
+
+        addPerson() {
+            if (!this.newPerson.trim()) return;
+            this.people.push({
+                id: Date.now(),
+                desc: this.newPerson.trim()
+            });
+            this.newPerson = "";
+            this.save();
+        },
+
+        addDeadline() {
+            if (!this.newDeadline.trim()) return;
+            const text = this.newDeadline.trim();
+            if (text.includes("考试")) {
+                this.exams.push({id: Date.now(), name: text, weeksLeft: 4});
+            } else {
+                this.deadlines.push({id: Date.now(), name: text, weeksLeft: 3});
+            }
+            this.newDeadline = "";
+            this.save();
+        },
+
+        buy(s) {
+            if (this.stats.money < s.cost) {
+                this.addMessage("bot", "你现在的金钱不够买这个东西。我们也要练习理性消费。");
+                this.save();
+                return;
+            }
+            this.stats.money -= s.cost;
+            for (const k in s.effects) {
+                this.stats[k] += s.effects[k];
+            }
+            this.stats.mood = Math.max(0, Math.min(100, this.stats.mood));
+            this.stats.health = Math.max(0, Math.min(100, this.stats.health));
+            this.stats.stamina = Math.max(0, Math.min(100, this.stats.stamina));
+            this.addMessage("bot", "已购买。适度奖励自己是可以的，但记得核心还是长期目标。");
+            this.save();
+        },
+
+        save() {
+            localStorage.setItem("li_system", JSON.stringify({
+                tab: this.tab,
+                week: this.week,
+                stats: this.stats,
+                weekStats: this.weekStats,
+                lastWeekComment: this.lastWeekComment,
+                messages: this.messages,
+                people: this.people,
+                deadlines: this.deadlines,
+                exams: this.exams
+            }));
+        }
+    }
+}).mount("#app");
+</script>
+</body>
+</html>
